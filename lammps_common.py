@@ -160,17 +160,12 @@ class LAMMPS(object):
                 for i, direction in enumerate('xyz'):
                     myfile.write('%12.6f%12.6f %s %s\n' %(0, 0))
 
-#            fftype_fmt = {'Masses': '{:5d}{:12.5f}\n',
-#                    'Bond Coeffs': '{:5d}{:8.3f}{:8.3f}\n',
-#                    'Angle Coeffs': '{:5d}{:8.3f}{:8.3f}\n',
-#                    'Dihedral Coeffs': '{}{}{}'}
             for name in self.fftypes:
                 if self.fftypes[name]:
                     myfile.write('\n%s\n\n' %name)
                     fmt = '{:5d}'+'{:12.6f}'*(len(self.fftypes[name][0])-1)+'\n'
                     for item in self.fftypes[name]:
                         myfile.write(fmt.format(*item))
-#                        myfile.write(fftype_fmt[name].format(*item))
 
             myfile.write('\nAtoms\n\n')
             for item in self.atoms:
@@ -203,18 +198,3 @@ def test():
         print('Box sizes:', lmp.box)
 if __name__ == '__main__':
     test()
-
-def test_2():
-    lmp = LAMMPS()
-    lmp.read_data(['data.mxn', 'lj.mxn'])
-    temp = LAMMPS()
-    temp.read_data(['data.water', 'lj.water'])
-    lmp.add(temp)
-    
-    print(lmp.nums)
-    print(lmp.fftypes)
-    print('Atoms:', len(lmp.atoms))
-    for item in lmp.connections:
-        print(item, len(lmp.connections[item]))
-    print('LJ:',lmp.lj)
-    print('Box sizes:', lmp.box)
