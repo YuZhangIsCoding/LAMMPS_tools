@@ -1,0 +1,15 @@
+# All the atoms from diferent molecules will be separated at least 2.0
+# Anstroms at the solution.
+tolerance 2.0
+
+# The file type of input and output files is PDB
+filetype pdb
+
+# The name of the output file
+output bulk.pdb
+
+# pack 800 water molecules in a cubic box with box length of 30 angstroms
+structure water.pdb 
+  number 800
+  inside box 2. 2. 2. 30. 30. 30.
+end structure

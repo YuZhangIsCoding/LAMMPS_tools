@@ -1,0 +1,33 @@
+# Bulk water solution
+
+units           real
+boundary        p p p
+atom_style      full
+bond_style      harmonic
+angle_style     harmonic
+
+pair_style      lj/charmm/coul/long 10.0 12.0 12.0
+kspace_style    pppm 1.0e-5
+
+read_data       data.water
+
+pair_coeff	1	1    0.152100    3.150700
+pair_coeff	1	2    0.000000    1.575350
+pair_coeff	2	2    0.000000    0.000000
+
+
+neighbor        2.0 bin
+neigh_modify    delay 0 every 1
+
+timestep        1.0
+
+
+thermo          100
+thermo_style    custom step temp pe press vol lx density
+
+fix 1 all npt temp 300 300 100.0 z 1 1 1000.0
+dump 5 all custom 100 md.lammpstrj id type x y z
+restart 50 md.restart.1 md.restart.2
+
+run 5000
+write_data data.output
