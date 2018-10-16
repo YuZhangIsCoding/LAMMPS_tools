@@ -1,4 +1,4 @@
-#Build bulk simulation of water
+# Build bulk simulation of water
 
 This repo gives an example of building a lammps input file from Gromacs-like files for bulk simulations of water.
 
@@ -20,33 +20,33 @@ Steps:
 
 1. Use Packmol to pack water molecules into a simulation box. This will generate a file bulk.pdb that contains the coordinates of 800 water molecules in a 3nm-long simulation box.
 
-`packmol < pack_water.inp`
+    `packmol < pack_water.inp`
 
 2. (Optional) Use Gromacs's editconf command to convert bulk.pdb file to gromacs format.
 
-`gmx_mpi editconf -f bulk.pdb -o bulk.gro -box 3`
+    `gmx_mpi editconf -f bulk.pdb -o bulk.gro -box 3`
 
-You can use other tools to achieve this, such as VMD.
+    You can use other tools to achieve this, such as VMD.
 
 3. Use gro2lammps.py to generate input files for Lammps.
 
-`python gro2lammps.py -g bulk.gro -ff water.itp supplement.txt -o data.water -ljout lj.water -kcal`
+    `python gro2lammps.py -g bulk.gro -ff water.itp supplement.txt -o data.water -ljout lj.water -kcal`
 
-To checkout the usuage of gro2lammps.py, please use 
+    To checkout the usuage of gro2lammps.py, please use 
 
-`python gro2lammps.py -h`
+    `python gro2lammps.py -h`
 
-This step will generate 2 output files: 
+    This step will generate 2 output files: 
     
     * data.water: contains the coordinates and bonding infomation
     * lj.water: contains the Lennard-Jones parameters, which could be written in the lammps input file (in.water).
 
 4. Run Lammps simulation:
 
-Serial:
+    Serial:
 
-`lmp_serial < in.water`
+    `lmp_serial < in.water`
 
-Mpi:
+    Mpi:
 
-`mpirun -np 16 lmp_mpi < in.water`
+    `mpirun -np 16 lmp_mpi < in.water`
