@@ -1,0 +1,26 @@
+# All the atoms from diferent molecules will be separated at least 2.0
+# Anstroms at the solution.
+tolerance 2.0
+
+# The file type of input and output files is PDB
+
+filetype pdb
+
+# The name of the output file
+
+output bulk.pdb
+
+structure water.pdb 
+  number 5300
+  inside box 0. 0. -9.5 218. 34. 9.5
+end structure
+
+structure water.pdb 
+  number 2200
+  inside box -23. 0. 11.5 23. 34. 48.5
+end structure
+
+structure water.pdb 
+  number 2200
+  inside box 87. 0. 11.5 133. 34. 48.5
+end structure

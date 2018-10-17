@@ -1,0 +1,11 @@
+[ atomtypes ]
+;   atomtypes   sigma   epsilon
+    OW          3.1507  0.1521
+    HW          0.0000  0.0000
+[ bondtypes ]
+; atomtype1 atomtype2   bondlength  k
+    OW      HW          0.9572      450
+
+[ angletypes ]
+; atometype1    atomtype2   atomtype3   theta   k
+    HW          OW          HW          104.52  55

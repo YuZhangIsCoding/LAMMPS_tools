@@ -1,0 +1,14 @@
+[ moleculetype ]
+WTR      3
+
+[ atoms ]
+    1   OW    1  WTR   OW    1  -0.8300000    15.9994
+    2   HW    1  WTR   HW    2   0.4150000    1.00800
+    3   HW    1  WTR   HW    3   0.4150000    1.00800
+
+[ bonds ]
+1   2   1
+1   3   1
+
+[ angles ]
+2   1   3   1
