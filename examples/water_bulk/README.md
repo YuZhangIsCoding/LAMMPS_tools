@@ -1,6 +1,6 @@
 # Build bulk simulation of water
 
-This repo gives an example of building a lammps input file from Gromacs-like files for bulk simulations of water.
+This repo gives an example of building Lammps input files from Gromacs-like files for bulk simulations of water.
 
 Prerequisites:
 
@@ -18,7 +18,7 @@ Files needed:
 
 Steps:
 
-1. Use Packmol to pack water molecules into a simulation box. This will generate a file bulk.pdb that contains the coordinates of 800 water molecules in a 3nm-long simulation box.
+1. Use Packmol to pack water molecules into a simulation box. This will generate bulk.pdb that contains the coordinates of 800 water molecules in a 3-nm-long simulation box.
 
     `packmol < pack_water.inp`
 
