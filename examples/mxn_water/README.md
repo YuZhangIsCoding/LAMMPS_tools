@@ -21,9 +21,10 @@ Files needed:
 
 Steps:   
 
-1. Use packmol to generate water phase around MXene, and convert the formats to Lammps input formats. Check the water_bulk example for more details.
+1. Use packmol to generate water phase around MXene, and convert the formats to Lammps input formats. Check the [water_bulk](https://github.com/YuZhangIsCoding/LAMMPS_tools/tree/master/examples/water_bulk) example for more details.
 
-    ```packmol < pack_water.inp
+    ```
+    packmol < pack_water.inp
     gmx_mpi editconf -f bulk.pdb -o bulk.gro
     python gro2lammps.py -g bulk.gro -ff water.itp supplement.txt -o data.water -ljout lj.water -kcal
     ```
