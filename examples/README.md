@@ -1,4 +1,4 @@
 # Snapshots from simulation
 
-## Mxene in water
+* MXene in water
 ![MXeneInWater](../images/mxn_water.png)
