@@ -10,6 +10,11 @@
 #       10-02-2018  Add load_ff, and modified subsequent load_* function, and
 #                   use generator to read in each parameter files. This helps
 #                   to load file from multiple files.
+#       1-15-2019   Load bond and angle parameters if they were found in .itp.
+#                   Added self.mq2lj to solve the conflicts raise when same LJ
+#                   paramters are shared by atoms with different charges.
+
+from collections import Counter
 
 class Gro(object):
     def __init__(self):
@@ -22,6 +27,9 @@ class Gro(object):
         mass:   dictionary of atomtypes and their corresponding mass
         lj:     dictionary of atomtypes and their corresponding lj parameters
                 the order is [sigma, epsilon]
+        mq2lj:  lookup dictionary for atomtypes of mass and charge to find
+                corresponding lj atomtypes (because same lj type could have
+                different charges)
         bondtypes:  dictionary of bond types
         angletypes: dictionary of angle types
         dihedraltypes:  dictionary of dihedral types
@@ -36,10 +44,12 @@ class Gro(object):
         self.natoms = None
         self.nmols = None
         self.info = []
+        self.residuals = Counter()
         self.atomtypes = {}
         self.mq = []
         self.mass = {}
         self.lj = {}
+        self.mq2lj = {}
         self.bondtypes = {}
         self.angletypes = {}
         self.dihedraltypes = {}
@@ -60,6 +70,7 @@ class Gro(object):
                     self.natoms = int(line)
                 elif i > 1 and i < self.natoms+2:
                     self.info.append(Gro.read_line(line))
+                    self.residuals[self.info[-1][1]] += 1
             self.box = [float(_) for _ in line.split()]
             # box vector for any coordinate system
             while len(self.box) < 9:
@@ -111,16 +122,22 @@ class Gro(object):
         self.nmols = self.natoms//len(self.mq)
     def load_mq(self, filegen):
         '''Read lines after [ atomtypes ] session and store molar mass and
-        atomic charge into self.mass and self.mq
-        Note that atoms with same atom type could have multiple atomic charges
+        atomic charge into self.mass and self.mq.
+        The key for self.atomtypes is its corresponding atom name, so each
+        atom type will only have one atom name.
         '''
         for line in filegen:
             if '[' in line and ']' in line:
                 return line
             temp = line.split()
-            if temp[1] not in self.mass:
-                self.mass[temp[1]] = float(temp[-1])
+            # use atom name instead of atom type for self.mass
+            if temp[4] not in self.mass:
+                self.mass[temp[4]] = float(temp[-1])
             self.mq.append([float(_) for _ in temp[-2:]])
+            if temp[4] not in self.mq2lj:
+                self.mq2lj[temp[4]] = temp[1]
+            elif temp[1] != self.mq2lj[temp[4]]:
+                raise ValueError('Different LJ atomtypes found!')
 
     def load_bondtypes(self, filegen, kcal = True):
         '''Read lines after [ bondtypes ]  session and store bondtypes as a 
@@ -132,6 +149,7 @@ class Gro(object):
         for line in filegen:
             if '[' in line and ']' in line:
                 return line
+            self._load_bondtypes(line, kcal)
             temp = line.split()
             k = float(temp[-1])
             b = float(temp[-2])
@@ -142,13 +160,29 @@ class Gro(object):
             self.bondtypes[(temp[1], temp[0])] = self.bondtypes[(temp[0], temp[1])]
             self.idx['bond'] += 1
 
-    def load_bonds(self, filegen):
+    def load_bonds(self, filegen, kcal=True):
         '''Note this only returns the relative index within the molecule,
-        it may not match the index in gro file'''
+        it may not match the index in gro file.
+        If the bonding parameters are found in these session, add them to
+        self.bondtypes immediately.
+        '''
+        print('loading bonds ...')
         for line in filegen:
             if '[' in line and ']' in line:
                 return line
-            self.bonds.append([int(_) for _ in line.split()[:2]])
+            temp = line.split()
+            self.bonds.append([int(_) for _ in temp[:2]])
+            if len(temp) == 5:
+                atom1 = self.info[self.bonds[-1][0]-1][2]
+                atom2 = self.info[self.bonds[-1][1]-1][2]
+                # default gromacs units are kJ/mol and nm
+                # convert them to kCal and angstrom
+                if (atom1, atom2) not in self.bondtypes.keys():
+                    self.bondtypes[(atom1, atom2)] = [self.idx['bond'], 
+                                                    float(temp[-1])/(100*4.184*2), 
+                                                    10*float(temp[-2])]
+                    self.bondtypes[(atom2, atom1)] = self.bondtypes[(atom1, atom2)]
+                    self.idx['bond'] +=1
                     
     def load_angletypes(self, filegen, kcal = True):
         '''Read lines after [ angletypes ]  session and store bondtypes as a 
@@ -171,11 +205,26 @@ class Gro(object):
 
     def load_angles(self, filegen):
         '''Note this only returns the relative index within the molecule,
-        it may not match the index in gro file'''
+        it may not match the index in gro file.
+        If the parameters for angle are found in this session, add them 
+        to self.angletypes.
+        '''
+        print('Loading angles ...')
         for line in filegen:
             if '[' in line and ']' in line:
                 return line
-            self.angles.append([int(_) for _ in line.split()[:3]])
+            temp = line.split()
+            self.angles.append([int(_) for _ in temp[:3]])
+            if len(temp) ==  6:
+                angle1 = self.info[self.angles[-1][0]-1][2]
+                angle2 = self.info[self.angles[-1][1]-1][2]
+                angle3 = self.info[self.angles[-1][2]-1][2]
+                if (angle1, angle2, angle3) not in self.angletypes.keys():
+                    self.angletypes[(angle1, angle2, angle3)] = [self.idx['angle'],
+                                                                float(temp[-1])/(4.184*2),
+                                                                float(temp[-2])]
+                    self.angletypes[(angle3, angle2, angle2)] = self.angletypes[(angle1, angle2, angle3)]
+                    self.idx['angle'] += 1
 
     def load_dihedraltypes(self):
         raise NotImplementedError()
@@ -185,12 +234,13 @@ class Gro(object):
 
     def load_nonbonds(self, filegen, kcal = True):
         '''Read gromacs topology file and find the Lennard-Jones parameter
-        and write it to self.atomtypes'''
+        and write it to self.lj'''
+        ljtypes = set(self.mq2lj.values())
         for line in filegen:
             if '[' in line and ']' in line:
                 return line
             temp = line.split()
-            if temp[0] in self.atomtypes:
+            if temp[0] in ljtypes:
                 sigma = float(temp[-2])
                 epsilon = float(temp[-1])
                 if not kcal:
@@ -212,6 +262,30 @@ class Gro(object):
     
     def write(self, filename, filetype = 'gro'):
         raise NotImplementedError()
+
+
+    def _write_line(self, infolist, f):
+        '''Write a line of atom info into gro file format
+        infolist: a list of atom info
+        f: file to be written 
+        '''
+        f.write("%5s%5s%5s%5s%8.3f%8.3f%8.3f\n" %tuple(infolist))
+
+    def split_residuals(self):
+        '''Split the gro files into several gro files according to their residual name'''
+        file_dict = {}
+        for item in self.info:
+            if item[1] not in file_dict:
+                f = open(item[1]+'.gro', 'w')
+                print('Writing to file %s' %(item[1]+'.gro'))
+                file_dict[item[1]] = f
+                f.write('Residual %s\n' %item[1])
+                f.write('%5d\n' %(self.residuals[item[1]]))
+            self._write_line(item, file_dict[item[1]])
+        for f in file_dict.values():
+            f.write('%10.5f%10.5f%10.5f\n' %(self.box[0], self.box[1], self.box[2]))
+            f.close()
+
 
     @staticmethod
     def read_line(string):

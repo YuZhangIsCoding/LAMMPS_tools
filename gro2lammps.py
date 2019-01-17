@@ -77,7 +77,7 @@ with open(args.output, 'w') as outfile:
     outfile.write('\nAtoms\n\n')
     for i, item in enumerate(gro.info):
         chargeinx = i%len(gro.mq)
-        outfile.write('%5d%5d%5d%12.5f%8.3f%8.3f%8.3f\n'
+        outfile.write('%8d%8d%5d%12.5f%8.3f%8.3f%8.3f\n'
                 %(i+1, i//len(gro.mq)+1, gro.atomtypes[item[2]],
                     gro.mq[i%len(gro.mq)][0], item[-3]*10, item[-2]*10, item[-1]*10))
 
@@ -98,6 +98,7 @@ with open(args.output, 'w') as outfile:
             for i in range(gro.nmols):
                 seq = gro.angletypes[tuple([gro.info[_-1][2] for _ in angle])][0]
                 outfile.write('{:10d}{:10d}{:10d}{:10d}{:10d}\n'.format(cnt, seq, *[_+i*num_per_mol for _ in angle]))
+                cnt += 1
 
                 
 ## add pair_coeffs
@@ -106,7 +107,9 @@ with open(args.ljout, 'w') as outfile:
     typelist = list(gro.atomtypes.keys())
     for i in range(len(typelist)):
         for j in range(i, len(typelist)):
-            epsilon = np.sqrt(gro.lj[typelist[i]][0]*gro.lj[typelist[j]][0])
-            sigma = (gro.lj[typelist[i]][1]+gro.lj[typelist[j]][1])/2
+            atom1 = gro.mq2lj[typelist[i]]
+            atom2 = gro.mq2lj[typelist[j]]
+            epsilon = np.sqrt(gro.lj[atom1][0]*gro.lj[atom2][0])
+            sigma = (gro.lj[atom1][1]+gro.lj[atom2][1])/2
             outfile.write('pair_coeff\t%d\t%d%12.6f%12.6f\n' 
                     %(gro.atomtypes[typelist[i]], gro.atomtypes[typelist[j]], epsilon, sigma))
